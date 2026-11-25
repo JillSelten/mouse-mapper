@@ -2,7 +2,7 @@
 //  Mouse Mapper  -  geef de knoppen van je muis eigen functies
 //  Terug-knop, vooruit-knop en middelste knop: één klik, dubbelklik en
 //  vasthouden. Werkt met elke muis, zonder de software van de fabrikant.
-//  Gedeelde onderdelen staan in Common.cs, het ronde menu in Radial.cs.
+//  Gedeelde onderdelen staan in Common.cs.
 // =====================================================================
 using System;
 using System.Collections.Generic;
@@ -17,8 +17,8 @@ using System.Windows.Forms;
 [assembly: AssemblyTitle("Mouse Mapper")]
 [assembly: AssemblyProduct("Mouse Mapper")]
 [assembly: AssemblyDescription("Mouse Mapper")]
-[assembly: AssemblyVersion("1.0.0.0")]
-[assembly: AssemblyFileVersion("1.0.0.0")]
+[assembly: AssemblyVersion("1.0.1.0")]
+[assembly: AssemblyFileVersion("1.0.1.0")]
 
 namespace PenMapper
 {
@@ -26,7 +26,7 @@ namespace PenMapper
     {
         public const string Name = "Mouse Mapper";
         public const string Id = "MouseMapper";
-        public const string Version = "1.0";
+        public const string Version = "1.0.1";
         public static readonly string Glyph = "" + (char)0xE962;
         public static string Tagline { get { return L.T("muisknoppen naar wens", "your mouse, your way"); } }
     }
@@ -54,9 +54,7 @@ namespace PenMapper
         ToggleSwitch tglMapping, tglAutostart, tglOsd;
         DarkCombo cmbDbl, cmbHold;
         bool mappingOn, osdOn, exiting, toldTray, loading;
-        RadialMenu radial;
-        RadialConfig radialCfg;
-        PenButton radialHoldButton;
+
         IntPtr hook = IntPtr.Zero;
         HookProc hookProc;
 
@@ -90,14 +88,9 @@ namespace PenMapper
                 b.SingleTimer.Tick += (s, e) => OnSingle(bb);
             }
 
-            radialCfg = new RadialConfig();
-            radialCfg.Load();
-            radial = new RadialMenu();
-            radial.Picked += it => RunAction(it.Action, it.Param, null);
 
             BuildSidebar();
             BuildButtonsPage();
-            BuildRadialPage();
             BuildSettingsPage();
             BuildHelpPage();
             BuildMenus();
@@ -233,9 +226,8 @@ namespace PenMapper
             var side = new SidebarPanel { Location = new Point(0, 0), Size = new Size(SB, H), BackColor = Theme.Side };
             Controls.Add(side);
             AddNav(side, "knoppen", "" + (char)0xE962, L.T("Knoppen", "Buttons"), 104);
-            AddNav(side, "radial", "" + (char)0xE8A9, "Radial menu", 150);
-            AddNav(side, "instellingen", "" + (char)0xE713, L.T("Instellingen", "Settings"), 196);
-            AddNav(side, "hulp", "" + (char)0xE946, L.T("Hulp en test", "Help and test"), 242);
+            AddNav(side, "instellingen", "" + (char)0xE713, L.T("Instellingen", "Settings"), 150);
+            AddNav(side, "hulp", "" + (char)0xE946, L.T("Hulp en test", "Help and test"), 196);
             mapDot = AddLabel(side, "●", Theme.Regular(9), Theme.Good, 22, H - 48, 18, 22);
             mapLabel = AddLabel(side, "-", Theme.Regular(9), Theme.Muted, 42, H - 48, 170, 22);
         }
@@ -281,7 +273,7 @@ namespace PenMapper
                 var slot = new Slot { Gesture = GestureKeys[i], Owner = b };
                 slot.Combo = new DarkCombo { Location = new Point(130, ry + 1), Width = 300 };
                 slot.Combo.Items.Add(NativeAction);
-                foreach (var a in Actions.All) slot.Combo.Items.Add(a);
+                foreach (var a in Actions.All) if (a.Id != "radial") slot.Combo.Items.Add(a);
                 card.Controls.Add(slot.Combo);
                 slot.Field = new FieldBox { Location = new Point(442, ry), Size = new Size(CW - 442 - 22 - 40, 32), Visible = false };
                 card.Controls.Add(slot.Field);
@@ -315,6 +307,7 @@ namespace PenMapper
         static ActionDef ById(string id)
         {
             if (id == "native") return NativeAction;
+            if (id == "radial") return Actions.All[0];
             return Actions.ById(id);
         }
 
@@ -324,8 +317,7 @@ namespace PenMapper
             foreach (var b in buttons)
                 foreach (var s in b.Slots)
                 {
-                    string def = s.Gesture == "enkel" ? "native"
-                        : (b.Key == "terug" && s.Gesture == "houden") ? "radial" : "none";
+                    string def = s.Gesture == "enkel" ? "native" : "none";
                     var a = ById(Settings.Get(b.Key + "." + s.Gesture, def)) ?? Actions.All[0];
                     s.Combo.SelectedItem = a;
                     string param = Settings.Get(b.Key + "." + s.Gesture + ".waarde", "");
@@ -349,17 +341,6 @@ namespace PenMapper
         {
             using (var dlg = new OpenFileDialog { Title = L.T("Kies een programma", "Choose a program"), Filter = L.T("Programma's", "Programs") + "|*.exe;*.lnk;*.bat;*.cmd|" + L.T("Alle bestanden", "All files") + "|*.*" })
                 if (dlg.ShowDialog(this) == DialogResult.OK) s.Field.Box.Text = dlg.FileName;
-        }
-
-        // ---------------------------------------------------- pagina: radial menu
-        void BuildRadialPage()
-        {
-            var p = NewPage("radial", "Radial menu",
-                L.T("Kies wat er in de 8 vakken van het ronde menu staat. Open het met de actie 'Radial menu openen'.",
-                    "Choose what goes in the 8 slices of the round menu. Open it with the 'Open radial menu' action."));
-            radialCfg.BuildEditor(p, PX, 100, CW);
-            AddButton(p, L.T("Radial menu testen", "Test radial menu"), PX, 100 + 16 + RadialConfig.Count * 46 + 16, 200, 38, true,
-                (s, e) => radial.ShowAt(Cursor.Position, radialCfg.Items, false));
         }
 
         // ------------------------------------------------ pagina: instellingen
@@ -441,12 +422,12 @@ namespace PenMapper
                 "•  Per knop stel je drie dingen in: één klik, twee keer snel drukken, of ingedrukt houden.\n\n" +
                 "•  'Standaard' laat de knop doen wat hij normaal doet. Staan alle drie op Standaard, dan blijft de knop helemaal normaal.\n\n" +
                 "•  Heeft een knop een dubbelklik-actie, dan wacht 'één klik' heel even of er nog een klik komt.\n\n" +
-                "•  'Radial menu openen' toont een rond menu met 8 acties; 'Snelmenu openen' een lijst met alle acties.\n\n" +
+                "•  'Snelmenu openen' toont bij de cursor een lijst met alle acties.\n\n" +
                 "•  Sluit je dit venster, dan blijft Mouse Mapper actief rechtsonder in het systeemvak.",
                 "•  Each button has three settings: a single click, pressing twice quickly, or holding it.\n\n" +
                 "•  'Default' keeps the button's normal function. If all three are Default, the button stays completely normal.\n\n" +
                 "•  If a button has a double-click action, a single click waits a moment for a second click.\n\n" +
-                "•  'Open radial menu' shows a round menu with 8 actions; 'Open quick menu' a list of all actions.\n\n" +
+                "•  'Open quick menu' shows a list of all actions at the cursor.\n\n" +
                 "•  Closing this window keeps Mouse Mapper running in the system tray."),
                 Theme.Regular(10), Theme.Muted, 22, 48, CW - 44, 240, ContentAlignment.TopLeft);
             AddLabel(p, AppInfo.Name + " " + AppInfo.Version + "   ·   " + L.T("werkt met elke muis met zijknoppen", "works with any mouse with side buttons"),
@@ -471,7 +452,7 @@ namespace PenMapper
             var cats = new Dictionary<string, ToolStripMenuItem>();
             foreach (var a in Actions.All)
             {
-                if (a.Kind == ActionKind.None || a.NeedsParam || a.Id == "menu") continue;
+                if (a.Kind == ActionKind.None || a.NeedsParam || a.Id == "menu" || a.Id == "radial") continue;
                 ToolStripMenuItem cat;
                 if (!cats.TryGetValue(a.Category, out cat))
                 {
@@ -587,11 +568,7 @@ namespace PenMapper
         void OnRelease(PenButton b)
         {
             b.HoldTimer.Stop();
-            if (b.Held)
-            {
-                if (radialHoldButton == b && radial.IsOpen) { radialHoldButton = null; radial.CommitHover(); }
-                return;
-            }
+            if (b.Held) return;
             if (HasAction(b, 1))
             {
                 if (b.Pending) { b.Pending = false; b.SingleTimer.Stop(); Fire(b, 1); }
@@ -628,7 +605,6 @@ namespace PenMapper
             if (a == null || a.Kind == ActionKind.None) return;
             if (!mappingOn && a.Id != "pause") return;
             string param = slot.Param;
-            if (a.Id == "radial") radialHoldButton = g == 2 ? b : null;
             BeginInvoke(new Action(() => RunAction(a, param, b)));
         }
 
@@ -674,7 +650,6 @@ namespace PenMapper
                             case "touchkb": TouchKeyboard.Toggle(); break;
                             case "lock": Native.LockWorkStation(); break;
                             case "menu": quickMenu.Show(Cursor.Position); return;
-                            case "radial": radial.ShowAt(Cursor.Position, radialCfg.Items, radialHoldButton != null); return;
                             case "pause":
                                 SetMapping(!mappingOn, true);
                                 if (osdOn) osd.ShowMessage(mappingOn ? L.T("Mapping hervat", "Mapping resumed") : L.T("Mapping gepauzeerd", "Mapping paused"));

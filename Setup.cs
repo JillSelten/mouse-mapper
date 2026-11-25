@@ -17,15 +17,15 @@ using Microsoft.Win32;
 [assembly: AssemblyTitle("Mouse Mapper Setup")]
 [assembly: AssemblyProduct("Mouse Mapper")]
 [assembly: AssemblyDescription("Mouse Mapper Setup")]
-[assembly: AssemblyVersion("1.0.0.0")]
-[assembly: AssemblyFileVersion("1.0.0.0")]
+[assembly: AssemblyVersion("1.0.1.0")]
+[assembly: AssemblyFileVersion("1.0.1.0")]
 
 namespace PenMapperSetup
 {
     static class Program
     {
         public const string AppName = "Mouse Mapper";
-        public const string Version = "1.0";
+        public const string Version = "1.0.1";
         public static bool En = true;   // installatieprogramma standaard in het Engels
         public static string T(string nl, string en) { return En ? en : nl; }
 

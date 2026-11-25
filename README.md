@@ -19,11 +19,8 @@ No administrator rights needed. Uninstall any time via *Windows Settings → App
 
 - **Back, forward and middle button** — three actions each: single click, double click and hold
 - **Default** — keep a button's normal function (e.g. browser back) and only add extra gestures
-- **Radial menu** — hold a button and a round menu with 8 actions of your choice opens at your cursor
 - **60+ actions**, custom shortcuts, typing text, opening programs or websites, quick menu
 - **English and Dutch**, dark design, runs in the system tray, optional start with Windows
-
-![Radial menu](docs/radial.png)
 
 Works with almost any mouse with side buttons. Some gaming mice send their extra buttons as
 keyboard keys; those are not detected (the *Help and test* page shows live what is seen).
@@ -40,7 +37,6 @@ powershell -ExecutionPolicy Bypass -File build.ps1
 | --- | --- |
 | `MouseMapper.cs` | The app window, mouse hook and gestures |
 | `Common.cs` | Shared parts: theme, settings, actions, controls |
-| `Radial.cs` | The radial menu |
 | `Setup.cs` | The installer |
 
 Also by this maker: [Pen Mapper](https://github.com/JillSelten/pen-mapper) · [Pen Radial Menu](https://github.com/JillSelten/pen-radial-menu)
@@ -48,5 +44,5 @@ Also by this maker: [Pen Mapper](https://github.com/JillSelten/pen-mapper) · [P
 ---
 
 **Nederlands:** Mouse Mapper geeft de zijknoppen en de middelste knop van elke muis eigen functies:
-één klik, dubbelklik en vasthouden, plus een radial menu. Download `Mouse.Mapper.Setup.exe` bij de
+één klik, dubbelklik en vasthouden. Download `Mouse.Mapper.Setup.exe` bij de
 [nieuwste release](../../releases/latest).
